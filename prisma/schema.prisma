@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+  HOLD
+  SUSPENDED
+  BLOCKED
+  DELETED
+}
+
+enum UserType {
+  INDIVIDUAL
+  ORGANISATION
+}
+
+enum RoleType {
+  ADMIN
+  GENERAL
+}
+
+model GlobalPermissionMaster {
+  id             Int      @id @default(autoincrement())
+  permissionName String
+  parent         String
+  packageId      Int?
+  status         Status   @default(ACTIVE)
+  createdBy      String   @default("System")
+  updatedBy      String   @default("System")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  package                 Packages?                 @relation(fields: [packageId], references: [id])
+  globalTenantPermissions GlobalTenantPermissions[]
+  globalUserPermissions   GlobalUserPermissions[]
+
+  @@unique([permissionName, parent, packageId])
+  @@map("global_permission_master")
+}
+
+model GlobalTenantPermissions {
+  id            Int      @id @default(autoincrement())
+  tenantId      Int
+  permissionsId Int
+  packageId     Int?
+  status        Status   @default(ACTIVE)
+  createdBy     String   @default("System")
+  updatedBy     String   @default("System")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant     Tenants                @relation(fields: [tenantId], references: [id])
+  permission GlobalPermissionMaster @relation(fields: [permissionsId], references: [id])
+
+  globalRolePermissions GlobalRolePermissions[]
+
+  @@map("global_tenant_permissions")
+}
+
+model Packages {
+  id          Int      @id @default(autoincrement())
+  name        String
+  price       Int
+  packageData Json
+  limits      Json?
+  status      Status   @default(ACTIVE)
+  createdBy   String   @default("System")
+  updatedBy   String   @default("System")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant                 Tenants[]
+  globalPermissionMaster GlobalPermissionMaster[]
+
+  @@map("packages")
+}
+
+model Tenants {
+  id        Int      @id @default(autoincrement())
+  name      String
+  logo      String?
+  packageId Int
+  status    Status   @default(ACTIVE)
+  createdBy String   @default("System")
+  updatedBy String   @default("System")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  package                 Packages                  @relation(fields: [packageId], references: [id])
+  role                    Roles[]
+  users                   Users[]
+  globalTenantPermissions GlobalTenantPermissions[]
+
+  @@map("tenants")
+}
+
+model Roles {
+  id        Int      @id @default(autoincrement())
+  roleName  String
+  roleType  RoleType
+  tenantId  Int
+  status    Status   @default(ACTIVE)
+  createdBy String   @default("System")
+  updatedBy String   @default("System")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant                Tenants                 @relation(fields: [tenantId], references: [id])
+  user                  Users[]
+  globalRolePermissions GlobalRolePermissions[]
+
+  @@map("roles")
+}
+
+model Users {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  username  String   @unique
+  password  String
+  userType  UserType @default(INDIVIDUAL)
+  roleId    Int?
+  tenantId  Int?
+  status    Status   @default(ACTIVE)
+  createdBy String   @default("System")
+  updatedBy String   @default("System")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  role                  Roles?                  @relation(fields: [roleId], references: [id])
+  tenant                Tenants?                @relation(fields: [tenantId], references: [id])
+  globalUserPermissions GlobalUserPermissions[]
+
+  @@map("users")
+}
+
+model GlobalRolePermissions {
+  id           Int      @id @default(autoincrement())
+  roleId       Int
+  permissionId Int
+  status       Status   @default(ACTIVE)
+  createdBy    String   @default("System")
+  updatedBy    String   @default("System")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  role                   Roles                   @relation(fields: [roleId], references: [id])
+  globalTenantPermission GlobalTenantPermissions @relation(fields: [permissionId], references: [id])
+
+  @@map("global_role_permissions")
+}
+
+model GlobalUserPermissions {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  permissionId Int
+  status       Status   @default(ACTIVE)
+  createdBy    String   @default("System")
+  updatedBy    String   @default("System")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  globalPermissionMaster GlobalPermissionMaster @relation(fields: [permissionId], references: [id])
+  users                  Users                  @relation(fields: [userId], references: [id])
+
+  @@map("global_user_permissions")
+}
