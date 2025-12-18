@@ -3,7 +3,7 @@ import { SUCCESS } from "../../utils/constant";
 import { prisma } from "../../../lib/prisma";
 import { compare, hashPassword } from "../../utils/hash";
 import {
-  BAD_GATEWAY,
+  BAD_REQUEST,
   ErrorHandler,
   NOT_FOUND,
   UNAUTHORIZED,
@@ -68,6 +68,13 @@ class Auth {
         globalPermissions: permissions,
         token: Token,
       };
+    } catch (e) {
+      throwError(e);
+    }
+  }
+  async register(body) {
+    try {
+      const { name, email, username, password } = body;
     } catch (e) {
       throwError(e);
     }

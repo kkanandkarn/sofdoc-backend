@@ -1,4 +1,4 @@
-import { BAD_GATEWAY } from "../helper";
+import { BAD_REQUEST } from "../helper";
 
 interface Err {
   statusCode?: number; // make optional
@@ -6,7 +6,7 @@ interface Err {
 }
 
 const handleError = (err: Err, res) => {
-  const { statusCode = BAD_GATEWAY, message } = err;
+  const { statusCode = BAD_REQUEST, message } = err;
 
   res.status(statusCode).json({
     status: "FAILURE",

@@ -172,3 +172,35 @@ model GlobalUserPermissions {
 
   @@map("global_user_permissions")
 }
+
+model Otp {
+  id        Int      @id @default(autoincrement())
+  email     String
+  otp       String
+  otpReason String
+  attempts  Int      @default(0)
+  isUsed    Boolean
+  status    Status   @default(ACTIVE)
+  createdBy String   @default("System")
+  updatedBy String   @default("System")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  expiredAt DateTime
+
+  @@map("otp")
+}
+
+model OtpCount {
+  id        Int      @id @default(autoincrement())
+  email     String
+  otp       String
+  otpReason String
+  otpCount  Int
+  status    Status   @default(ACTIVE)
+  createdBy String   @default("System")
+  updatedBy String   @default("System")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("otp_count")
+}
