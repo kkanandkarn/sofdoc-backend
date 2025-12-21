@@ -1,5 +1,5 @@
 import { throwError } from "../../utils/helper";
-import { SUCCESS } from "../../utils/constant";
+import { STATUS, SUCCESS } from "../../utils/constant";
 import { prisma } from "../../../lib/prisma";
 import { compare, hashPassword } from "../../utils/hash";
 import {
@@ -14,14 +14,24 @@ class Auth {
   async login(body) {
     try {
       const { username, password } = body;
-      const user = await prisma.users.findUnique({
+      const user = await prisma.users.findFirst({
         where: {
           username: username,
+          NOT: {
+            status: "DELETED",
+          },
         },
       });
 
       if (!user) {
         throw new ErrorHandler(NOT_FOUND, "User not found");
+      }
+      if (user.status !== STATUS.ACTIVE || user.status !== STATUS.HOLD) {
+        return {
+          userData: {
+            status: user.status,
+          },
+        };
       }
       const isCorrectPassword = await compare(user.password, password);
       if (!isCorrectPassword) {
@@ -74,7 +84,7 @@ class Auth {
   }
   async register(body) {
     try {
-      const { name, email, username, password } = body;
+      const { name, email } = body;
     } catch (e) {
       throwError(e);
     }

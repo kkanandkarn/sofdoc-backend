@@ -19,7 +19,7 @@ const dispatcher = async ({
 
     if (data) {
       return res.status(200).json({
-        status: "SUCCESS",
+        status: SUCCESS,
         statusCode: 200,
         data,
       });

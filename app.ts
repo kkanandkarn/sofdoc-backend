@@ -24,7 +24,7 @@ app
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 1,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res, next) => {
