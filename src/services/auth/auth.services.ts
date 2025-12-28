@@ -4,11 +4,14 @@ import { prisma } from "../../../lib/prisma";
 import { compare, hashPassword } from "../../utils/hash";
 import {
   BAD_REQUEST,
+  CONFLICT,
   ErrorHandler,
   NOT_FOUND,
   UNAUTHORIZED,
 } from "../../helper";
 import token from "../../utils/token";
+import AuthHelper from "./auth-helper.services";
+import Upload from "../upload/upload.services";
 
 class Auth {
   async login(body) {
@@ -82,9 +85,47 @@ class Auth {
       throwError(e);
     }
   }
-  async register(body) {
+  async register(body, files, tx) {
     try {
-      const { name, email } = body;
+      const { name, email, username } = body;
+      const isDuplicateEmail = await new AuthHelper().validateDuplicateEmail(
+        email,
+        tx,
+      );
+      if (isDuplicateEmail) {
+        throw new ErrorHandler(CONFLICT, "Email already exists.");
+      }
+      const isDuplicateUsername =
+        await new AuthHelper().validateDuplicateUsername(username, tx);
+
+      if (isDuplicateUsername) {
+        throw new ErrorHandler(CONFLICT, "Username already exists.");
+      }
+
+      const newUser = await tx.users.create({
+        data: {
+          name: name,
+          email: email,
+          status: "INACTIVE",
+          userType: "INDIVIDUAL",
+        },
+      });
+    } catch (e) {
+      throwError(e);
+    }
+  }
+  async updateUserPicture(body, files, tx) {
+    try {
+      if (!files) {
+        throw new ErrorHandler(BAD_REQUEST, "File is required.");
+      }
+
+      const uploadData = await new Upload().cloudinaryUpload(
+        body,
+        files,
+        "picture",
+        tx,
+      );
     } catch (e) {
       throwError(e);
     }

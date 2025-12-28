@@ -11,3 +11,21 @@ export const STATUS = {
   BLOCKED: "BLOCKED",
   DELETED: "DELETED",
 };
+
+export const BASE_UPLOAD_FOLDER = "sofdoc";
+export const ALLOWED_MIME_TYPES = {
+  image: ["image/jpeg", "image/png", "image/webp"],
+  pdf: ["application/pdf"],
+  all: [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  ],
+};

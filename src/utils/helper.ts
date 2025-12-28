@@ -1,6 +1,6 @@
-import { ApiError } from "./interface";
-import { ErrorHandler, SERVER_ERROR } from "../helper";
-import { SERVER_ERROR_MESSAGE } from "./constant";
+import { ApiError, File, FileMimeType } from "./interface";
+import { BAD_REQUEST, ErrorHandler, INTERNAL_SERVER_ERROR } from "../helper";
+import { ALLOWED_MIME_TYPES, SERVER_ERROR_MESSAGE } from "./constant";
 import camelcaseKeys from "camelcase-keys";
 import * as crypto from "node:crypto";
 
@@ -9,17 +9,17 @@ export const throwError = (error: ApiError) => {
     throw new ErrorHandler(error.statusCode, error.message);
   }
   console.log(error);
-  throw new ErrorHandler(SERVER_ERROR, SERVER_ERROR_MESSAGE);
+  throw new ErrorHandler(INTERNAL_SERVER_ERROR, SERVER_ERROR_MESSAGE);
 };
 
-export const camelize = (obj, stopPaths = []) => {
+export const camelize = (obj: any, stopPaths: string[] = []) => {
   try {
     return camelcaseKeys(JSON.parse(JSON.stringify(obj)), {
       deep: true,
       stopPaths: stopPaths,
     });
   } catch (error) {
-    throw new ErrorHandler(SERVER_ERROR, error);
+    throw new ErrorHandler(INTERNAL_SERVER_ERROR, error);
   }
 };
 
@@ -28,9 +28,26 @@ export const generateOtp = (): string => {
   const otp = crypto.randomInt(1000, 10000);
   return otp.toString();
 };
+export const getLast24HoursDate = (): Date =>
+  new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-export const getLast24HoursDate = () => {
-  const now = new Date();
-  const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-  return last24Hours;
+export const getFile = (
+  files: any,
+  key = "document",
+  fileType = "all",
+): File => {
+  try {
+    const file: File = files[key];
+    if (!file) {
+      throw new ErrorHandler(BAD_REQUEST, "File not found");
+    }
+    const mimeType = file.mimetype;
+    const allowedMimeTypes = ALLOWED_MIME_TYPES[fileType];
+    if (!allowedMimeTypes.includes(mimeType)) {
+      throw new ErrorHandler(BAD_REQUEST, "File type is not supported");
+    }
+    return file;
+  } catch (e) {
+    throwError(e);
+  }
 };

@@ -97,6 +97,7 @@ model Tenants {
   role                    Roles[]
   users                   Users[]
   globalTenantPermissions GlobalTenantPermissions[]
+  urlMapper               UrlMapper[]
 
   @@map("tenants")
 }
@@ -115,6 +116,7 @@ model Roles {
   tenant                Tenants                 @relation(fields: [tenantId], references: [id])
   user                  Users[]
   globalRolePermissions GlobalRolePermissions[]
+  urlMapper             UrlMapper[]
 
   @@map("roles")
 }
@@ -124,6 +126,7 @@ model Users {
   name      String
   email     String   @unique
   username  String?  @unique
+  picture   String?
   password  String?
   userType  UserType @default(INDIVIDUAL)
   roleId    Int?
@@ -137,6 +140,7 @@ model Users {
   role                  Roles?                  @relation(fields: [roleId], references: [id])
   tenant                Tenants?                @relation(fields: [tenantId], references: [id])
   globalUserPermissions GlobalUserPermissions[]
+  urlMapper             UrlMapper[]
 
   @@map("users")
 }
@@ -203,4 +207,31 @@ model OtpCount {
   updatedAt DateTime @updatedAt
 
   @@map("otp_count")
+}
+
+model UrlMapper {
+  id               Int      @id @default(autoincrement())
+  fileId           String
+  originalUrl      String
+  mapUrl           String
+  fileName         String
+  fileSize         String
+  fileType         String
+  originalFileName String
+  originalFileSize String
+  mimeType         String
+  userId           Int?
+  roleId           Int?
+  tenantId         Int?
+  status           Status   @default(ACTIVE)
+  createdBy        Int?
+  updatedBy        Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  roles   Roles?   @relation(fields: [roleId], references: [id])
+  users   Users?   @relation(fields: [userId], references: [id])
+  tenants Tenants? @relation(fields: [tenantId], references: [id])
+
+  @@map("url_mapper")
 }
