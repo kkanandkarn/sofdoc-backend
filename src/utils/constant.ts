@@ -29,3 +29,7 @@ export const ALLOWED_MIME_TYPES = {
     "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   ],
 };
+
+export const FRONTEND_ROUTES = {
+  verifyLink: "/verify/",
+};

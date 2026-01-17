@@ -3,6 +3,7 @@ import { BAD_REQUEST, ErrorHandler, INTERNAL_SERVER_ERROR } from "../helper";
 import { ALLOWED_MIME_TYPES, SERVER_ERROR_MESSAGE } from "./constant";
 import camelcaseKeys from "camelcase-keys";
 import * as crypto from "node:crypto";
+import { v4 as uuidv4 } from "uuid";
 
 export const throwError = (error: ApiError) => {
   if (error.statusCode) {
@@ -21,6 +22,28 @@ export const camelize = (obj: any, stopPaths: string[] = []) => {
   } catch (error) {
     throw new ErrorHandler(INTERNAL_SERVER_ERROR, error);
   }
+};
+
+export const transformVariable = (variable: any, defaultValue: any = null) => {
+  if (!variable) {
+    return defaultValue;
+  }
+  if (typeof variable === "string") {
+    const trimmed = variable.trim();
+    if (trimmed === "" || trimmed === "null" || trimmed === "undefined") {
+      return defaultValue;
+    }
+  }
+  if (typeof variable === "object") {
+    if (Array.isArray(variable)) {
+      return variable.length > 0 ? JSON.stringify(variable) : defaultValue;
+    } else {
+      return Object.keys(variable).length > 0
+        ? JSON.stringify(variable)
+        : defaultValue;
+    }
+  }
+  return variable;
 };
 
 export const generateOtp = (): string => {
@@ -47,6 +70,14 @@ export const getFile = (
       throw new ErrorHandler(BAD_REQUEST, "File type is not supported");
     }
     return file;
+  } catch (e) {
+    throwError(e);
+  }
+};
+
+export const generateUniqueId = async (): Promise<string> => {
+  try {
+    return uuidv4();
   } catch (e) {
     throwError(e);
   }

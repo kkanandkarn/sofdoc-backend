@@ -86,8 +86,80 @@ export interface File {
   hashAlgorithm: string | null;
 }
 export interface User {
-  userId: number;
-  roleId?: number;
-  tenantId?: number;
+  userId: string;
+  roleId?: string;
+  tenantId?: string;
   userType: "INDIVIDUAL" | "ORGANISATION";
+}
+
+export interface FileUploadResponse {
+  fileName: string;
+  originalFileName: string;
+  url: string;
+}
+
+export interface ApiResponse {
+  message: string;
+}
+
+export interface FormiddableResponse {
+  fields: any;
+  files: any;
+}
+
+export type Status = "ACTIVE" | "INACTIVE" | "HOLD" | "SUSPENDED";
+
+export interface CreateUserRequest {
+  name: string;
+  email: string;
+  username: string;
+  picture?: string;
+  password?: string;
+  userType: "INDIVIDUAL" | "ORGANISATION";
+  roleId?: string;
+  tenantId?: string;
+}
+export interface UpdateUserRequest {
+  id: string;
+  name?: string;
+  email?: string;
+  username?: string;
+  picture?: string;
+  password?: string;
+  userType?: "INDIVIDUAL" | "ORGANISATION";
+  roleId?: string;
+  tenantId?: string;
+}
+
+export interface CreateUserResponse {
+  id: string;
+  name: string;
+  email: string;
+  username: string;
+  picture?: string;
+  password?: string;
+  userType: "INDIVIDUAL" | "ORGANISATION";
+  roleId?: string;
+  tenantId?: string;
+  status: Status;
+  createdBy: string;
+  updatedBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GlobalPermissons {
+  id: string;
+  permissionName: string;
+  parent: string;
+}
+
+export interface GlobalPermissionResposne {
+  permissions: GlobalPermissons[];
+}
+
+export interface LinkDetailsRequest {
+  linkId: string;
+  linkData: any;
+  expiredAt: Date;
 }

@@ -8,9 +8,11 @@ import validateToken from "./src/middleware/auth";
 import rateLimit from "express-rate-limit";
 import { TOO_MANY_REQUESTS } from "./src/helper";
 import { FAILURE } from "./src/utils/constant";
+import { getCdnFile } from "./src/utils/cdn";
 
 const app = express();
 app.use("/", express.static("public"));
+
 app
   .use(cors())
   .use(
@@ -35,6 +37,13 @@ const apiLimiter = rateLimit({
     });
   },
 });
+
+// app.get("/cdn/*", (req, res, next) => {
+//   console.log("PATH", req.path);
+//   res.status(200).json({ message: "success" });
+// });
+// The (:splat*) syntax names the parameter "splat"
+app.get("/cdn/{*path}", getCdnFile);
 
 app.use("/api", apiLimiter);
 

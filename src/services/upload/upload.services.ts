@@ -9,8 +9,38 @@ import { prisma } from "../../../lib/prisma";
 import { BASE_UPLOAD_FOLDER, SUCCESS } from "../../utils/constant";
 
 class Upload {
+  async uploadInternalFile(
+    files: any,
+    key: string = "document",
+    user: User,
+    db: any = prisma,
+  ) {
+    try {
+      const defaultStorage: string = process.env.DEFAULT_FILE_STORAGE;
+      return await this.uploadFile(defaultStorage, files, key, user, db);
+    } catch (e) {
+      throwError(e);
+    }
+  }
+  async uploadFile(
+    provider: string,
+    files: any,
+    key: string = "document",
+    user: User,
+    db: any = prisma,
+  ): Promise<UploadResponse> {
+    try {
+      switch (provider) {
+        case "cloudinary":
+          return await this.cloudinaryUpload(files, key, user, db);
+        default:
+          throw new ErrorHandler(BAD_REQUEST, "This storage is not supported");
+      }
+    } catch (e) {
+      throwError(e);
+    }
+  }
   async cloudinaryUpload(
-    body: any,
     files: any,
     key: string = "document",
     user: User,
@@ -27,17 +57,23 @@ class Upload {
         );
 
       const folderPath = await new UploadHelper().resolveFolderPath(user);
-
+      const resourceType = file.mimetype.startsWith("image/")
+        ? "image"
+        : file.mimetype.startsWith("video/")
+          ? "video"
+          : "raw";
+      const start = Date.now();
       const uploadResult = await cloudinaryUploader.uploader.upload(
         file.filepath,
         {
           folder: `${BASE_UPLOAD_FOLDER}/${folderPath}`,
           public_id: path.parse(fileName).name,
-          resource_type: "auto",
+          resource_type: resourceType,
         },
       );
+      console.log(`Cloudinary upload success in ${Date.now() - start} ms`);
       const url = uploadResult.secure_url;
-      const mapUrl = `${process.env.BASEURL}/cdn/${folderPath}/${fileName}`;
+      const mapUrl = `${process.env.BASEURL}/cdn${folderPath}/${fileName}`;
 
       const fileMetaData = await new UploadHelper().extractFileMeta(file);
 
@@ -60,7 +96,7 @@ class Upload {
       return {
         fileName,
         originalFileName,
-        url,
+        url: mapUrl,
       };
     } catch (error) {
       throwError(error);

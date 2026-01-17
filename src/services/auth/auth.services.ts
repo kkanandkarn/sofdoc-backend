@@ -1,4 +1,4 @@
-import { throwError } from "../../utils/helper";
+import { generateUniqueId, throwError } from "../../utils/helper";
 import { STATUS, SUCCESS } from "../../utils/constant";
 import { prisma } from "../../../lib/prisma";
 import { compare, hashPassword } from "../../utils/hash";
@@ -11,13 +11,21 @@ import {
 } from "../../helper";
 import token from "../../utils/token";
 import AuthHelper from "./auth-helper.services";
-import Upload from "../upload/upload.services";
+import { Upload } from "../upload";
+import {
+  ApiResponse,
+  CreateUserResponse,
+  FileUploadResponse,
+} from "../../utils/interface";
+import { AuthRepository } from "../../repository";
+import AuthHelperServices from "./auth-helper.services";
+import { MailService } from "../mail";
 
-class Auth {
-  async login(body) {
+class AuthService {
+  async login(body: any, tx: any) {
     try {
       const { username, password } = body;
-      const user = await prisma.users.findFirst({
+      const user = await tx.users.findUnique({
         where: {
           username: username,
           NOT: {
@@ -41,7 +49,7 @@ class Auth {
         throw new ErrorHandler(UNAUTHORIZED, "Invalid Password");
       }
 
-      let userData = await prisma.users.findUnique({
+      let userData = await tx.users.findUnique({
         where: {
           username: username,
         },
@@ -85,50 +93,94 @@ class Auth {
       throwError(e);
     }
   }
-  async register(body, files, tx) {
+  async register(body, files, tx): Promise<ApiResponse> {
     try {
-      const { name, email, username } = body;
-      const isDuplicateEmail = await new AuthHelper().validateDuplicateEmail(
-        email,
-        tx,
-      );
+      const { email, username } = body;
+
+      const helper = new AuthHelper();
+      const repository = new AuthRepository();
+      const mailService = new MailService();
+
+      const isDuplicateEmail = await helper.validateDuplicateEmail(email, tx);
       if (isDuplicateEmail) {
         throw new ErrorHandler(CONFLICT, "Email already exists.");
       }
-      const isDuplicateUsername =
-        await new AuthHelper().validateDuplicateUsername(username, tx);
+      const isDuplicateUsername = await helper.validateDuplicateUsername(
+        username,
+        tx,
+      );
 
       if (isDuplicateUsername) {
         throw new ErrorHandler(CONFLICT, "Username already exists.");
       }
 
-      const newUser = await tx.users.create({
-        data: {
-          name: name,
-          email: email,
-          status: "INACTIVE",
-          userType: "INDIVIDUAL",
-        },
-      });
+      body = {
+        ...body,
+        status: "INACTIVE",
+        userType: "INDIVIDUAL",
+      };
+
+      let newUser: CreateUserResponse = await repository.createUser(body, tx);
+
+      const { permissions } = await repository.getGlobalPermissions(tx);
+      await repository.addUserPermissions(newUser.id, permissions, tx);
+
+      const linkId: string = await generateUniqueId();
+
+      const { url } = await helper.generateRegisterUserLink(linkId);
+
+      const linkDetails = {
+        linkId: linkId,
+        linkData: newUser,
+        expiredAt: new Date(Date.now() + 10 * 60 * 1000),
+      };
+
+      await repository.saveLinkDetails(linkDetails);
+
+      await mailService.sendCreateUserMail(newUser, url, tx);
+
+      if (files.picture) {
+        const user = {
+          ...newUser,
+          userId: newUser.id,
+        };
+        const { url }: FileUploadResponse = await this.uploadUserPicture(
+          files,
+          user,
+          tx,
+        );
+
+        await new AuthRepository().updateUser(
+          {
+            id: newUser.id,
+            picture: url,
+          },
+          tx,
+        );
+      }
+
+      return {
+        message: SUCCESS,
+      };
     } catch (e) {
       throwError(e);
     }
   }
-  async updateUserPicture(body, files, tx) {
+  async uploadUserPicture(files, user, tx): Promise<FileUploadResponse> {
     try {
       if (!files) {
         throw new ErrorHandler(BAD_REQUEST, "File is required.");
       }
-
-      const uploadData = await new Upload().cloudinaryUpload(
-        body,
+      const uploadData = await new Upload().uploadInternalFile(
         files,
         "picture",
+        user,
         tx,
       );
+      return uploadData;
     } catch (e) {
       throwError(e);
     }
   }
 }
-export default Auth;
+export default AuthService;

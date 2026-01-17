@@ -27,10 +27,10 @@ enum RoleType {
 }
 
 model GlobalPermissionMaster {
-  id             Int      @id @default(autoincrement())
+  id             String   @id @default(uuid())
   permissionName String
   parent         String
-  packageId      Int?
+  packageId      String?
   status         Status   @default(ACTIVE)
   createdBy      String   @default("System")
   updatedBy      String   @default("System")
@@ -46,10 +46,10 @@ model GlobalPermissionMaster {
 }
 
 model GlobalTenantPermissions {
-  id            Int      @id @default(autoincrement())
-  tenantId      Int
-  permissionsId Int
-  packageId     Int?
+  id            String   @id @default(uuid())
+  tenantId      String
+  permissionsId String
+  packageId     String?
   status        Status   @default(ACTIVE)
   createdBy     String   @default("System")
   updatedBy     String   @default("System")
@@ -65,9 +65,9 @@ model GlobalTenantPermissions {
 }
 
 model Packages {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(uuid())
   name        String
-  price       Int
+  price       String
   packageData Json
   limits      Json?
   status      Status   @default(ACTIVE)
@@ -83,10 +83,10 @@ model Packages {
 }
 
 model Tenants {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid())
   name      String
   logo      String?
-  packageId Int
+  packageId String
   status    Status   @default(ACTIVE)
   createdBy String   @default("System")
   updatedBy String   @default("System")
@@ -103,10 +103,10 @@ model Tenants {
 }
 
 model Roles {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid())
   roleName  String
   roleType  RoleType
-  tenantId  Int
+  tenantId  String
   status    Status   @default(ACTIVE)
   createdBy String   @default("System")
   updatedBy String   @default("System")
@@ -122,15 +122,15 @@ model Roles {
 }
 
 model Users {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid())
   name      String
   email     String   @unique
   username  String?  @unique
   picture   String?
   password  String?
   userType  UserType @default(INDIVIDUAL)
-  roleId    Int?
-  tenantId  Int?
+  roleId    String?
+  tenantId  String?
   status    Status   @default(ACTIVE)
   createdBy String   @default("System")
   updatedBy String   @default("System")
@@ -146,9 +146,9 @@ model Users {
 }
 
 model GlobalRolePermissions {
-  id           Int      @id @default(autoincrement())
-  roleId       Int
-  permissionId Int
+  id           String   @id @default(uuid())
+  roleId       String
+  permissionId String
   status       Status   @default(ACTIVE)
   createdBy    String   @default("System")
   updatedBy    String   @default("System")
@@ -162,9 +162,9 @@ model GlobalRolePermissions {
 }
 
 model GlobalUserPermissions {
-  id           Int      @id @default(autoincrement())
-  userId       Int
-  permissionId Int
+  id           String   @id @default(uuid())
+  userId       String
+  permissionId String
   status       Status   @default(ACTIVE)
   createdBy    String   @default("System")
   updatedBy    String   @default("System")
@@ -178,7 +178,7 @@ model GlobalUserPermissions {
 }
 
 model Otp {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid())
   email     String
   otp       String
   otpReason String
@@ -195,7 +195,7 @@ model Otp {
 }
 
 model OtpCount {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid())
   email     String
   otp       String
   otpReason String
@@ -210,8 +210,8 @@ model OtpCount {
 }
 
 model UrlMapper {
-  id               Int      @id @default(autoincrement())
-  fileId           String
+  id               String   @id @default(uuid())
+  fileId           String   @unique
   originalUrl      String
   mapUrl           String
   fileName         String
@@ -220,12 +220,12 @@ model UrlMapper {
   originalFileName String
   originalFileSize String
   mimeType         String
-  userId           Int?
-  roleId           Int?
-  tenantId         Int?
+  userId           String?
+  roleId           String?
+  tenantId         String?
   status           Status   @default(ACTIVE)
-  createdBy        Int?
-  updatedBy        Int?
+  createdBy        String?
+  updatedBy        String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -234,4 +234,30 @@ model UrlMapper {
   tenants Tenants? @relation(fields: [tenantId], references: [id])
 
   @@map("url_mapper")
+}
+
+model LinkDetails {
+  id        String   @id @default(uuid())
+  linkId    String
+  linkData  Json
+  status    Status   @default(ACTIVE)
+  createdBy String   @default("System")
+  updatedBy String   @default("System")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  expiredAt DateTime
+
+  @@map("link_details")
+}
+
+model WhitelistEmail {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  status    Status   @default(ACTIVE)
+  createdBy String   @default("System")
+  updatedBy String   @default("System")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("whitelist_email")
 }
