@@ -38,6 +38,22 @@ const authSchema = {
       "any.required": "Username is required",
     }),
   }),
+  auth_link_details_post: Joi.object({
+    linkId: Joi.string().uuid({ version: "uuidv4" }).required().messages({
+      "string.base": "Link ID should be a string",
+      "string.guid": "Invalid link Id",
+      "any.required": "Link ID is required",
+      "string.empty": "Link ID is required",
+    }),
+  }),
+  auth_resend_registration_request_post: Joi.object({
+    email: Joi.string().trim().email().required().messages({
+      "string.base": "Email should be a type of text",
+      "string.email": "Please enter a valid email address",
+      "string.empty": "Email is required",
+      "any.required": "Email is required",
+    }),
+  }),
 };
 
 export default authSchema;

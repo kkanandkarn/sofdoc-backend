@@ -107,7 +107,14 @@ export interface FormiddableResponse {
   files: any;
 }
 
-export type Status = "ACTIVE" | "INACTIVE" | "HOLD" | "SUSPENDED";
+export type Status =
+  | "ACTIVE"
+  | "INACTIVE"
+  | "HOLD"
+  | "SUSPENDED"
+  | "BLOCKED"
+  | "PENDING"
+  | "EXPIRED";
 
 export interface CreateUserRequest {
   name: string;
@@ -131,7 +138,7 @@ export interface UpdateUserRequest {
   tenantId?: string;
 }
 
-export interface CreateUserResponse {
+export interface UserDetailsResponse {
   id: string;
   name: string;
   email: string;
@@ -162,4 +169,28 @@ export interface LinkDetailsRequest {
   linkId: string;
   linkData: any;
   expiredAt: Date;
+}
+
+export interface LinkDetailsRequest {
+  linkId: string;
+}
+export interface LinkDetailsResponse {
+  id: string;
+  programCode: string;
+  linkData: Record<string, any>;
+  status: Status;
+  createdBy: string;
+  updatedBy: string;
+  createdAt: string;
+  updatedAt: string;
+  expiredAt: string;
+}
+
+export interface ResendRegistrationRequest {
+  email: string;
+}
+
+export interface ActivateUserAccountRequest {
+  linkId: string;
+  password: string;
 }

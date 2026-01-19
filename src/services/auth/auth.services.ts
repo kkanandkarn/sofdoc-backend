@@ -14,8 +14,11 @@ import AuthHelper from "./auth-helper.services";
 import { Upload } from "../upload";
 import {
   ApiResponse,
-  CreateUserResponse,
+  UserDetailsResponse,
   FileUploadResponse,
+  LinkDetailsRequest,
+  LinkDetailsResponse,
+  ResendRegistrationRequest,
 } from "../../utils/interface";
 import { AuthRepository } from "../../repository";
 import AuthHelperServices from "./auth-helper.services";
@@ -120,7 +123,7 @@ class AuthService {
         userType: "INDIVIDUAL",
       };
 
-      let newUser: CreateUserResponse = await repository.createUser(body, tx);
+      let newUser: UserDetailsResponse = await repository.createUser(body, tx);
 
       const { permissions } = await repository.getGlobalPermissions(tx);
       await repository.addUserPermissions(newUser.id, permissions, tx);
@@ -131,6 +134,7 @@ class AuthService {
 
       const linkDetails = {
         linkId: linkId,
+        programCode: "REGISTRATION_REQUEST",
         linkData: newUser,
         expiredAt: new Date(Date.now() + 10 * 60 * 1000),
       };
@@ -178,6 +182,84 @@ class AuthService {
         tx,
       );
       return uploadData;
+    } catch (e) {
+      throwError(e);
+    }
+  }
+  async getLinkDetails(
+    body: LinkDetailsRequest,
+    tx: any,
+  ): Promise<LinkDetailsResponse> {
+    try {
+      const { linkId } = body;
+      const repository = new AuthRepository();
+      const linkDetails: LinkDetailsResponse = await repository.getLinkDetails(
+        linkId,
+        tx,
+      );
+      if (!linkDetails) {
+        throw new ErrorHandler(NOT_FOUND, "Link details not found");
+      }
+
+      if (linkDetails.status === "EXPIRED") {
+        throw new ErrorHandler(BAD_REQUEST, "Link is expired.");
+      }
+      const now = new Date();
+
+      if (now > new Date(linkDetails.expiredAt)) {
+        throw new ErrorHandler(BAD_REQUEST, "Link is expired.");
+      }
+
+      console.log("LINK DETAILS DATA: ", linkDetails.linkData);
+
+      if (linkDetails.linkData.password) {
+        delete linkDetails.linkData.password;
+      }
+
+      return linkDetails;
+    } catch (e) {
+      throwError(e);
+    }
+  }
+  async resendRegistrationRequest(
+    body: ResendRegistrationRequest,
+    tx: any,
+  ): Promise<ApiResponse> {
+    try {
+      const { email } = body;
+      const repository = new AuthRepository();
+      const helper = new AuthHelper();
+      const mailService = new MailService();
+
+      const user: UserDetailsResponse = await repository.getUserByEmail(email);
+      if (!user) {
+        throw new ErrorHandler(
+          NOT_FOUND,
+          "User with this email does not exists.",
+        );
+      }
+      if (user.status !== STATUS.INACTIVE) {
+        throw new ErrorHandler(BAD_REQUEST, "No request found for this email.");
+      }
+
+      const linkId: string = await generateUniqueId();
+
+      const { url } = await helper.generateRegisterUserLink(linkId);
+
+      const linkDetails = {
+        linkId: linkId,
+        programCode: "REGISTRATION_REQUEST",
+        linkData: user,
+        expiredAt: new Date(Date.now() + 10 * 60 * 1000),
+      };
+
+      await repository.saveLinkDetails(linkDetails);
+
+      await mailService.sendCreateUserMail(user, url, tx);
+
+      return {
+        message: SUCCESS,
+      };
     } catch (e) {
       throwError(e);
     }

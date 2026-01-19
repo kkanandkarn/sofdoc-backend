@@ -1,13 +1,13 @@
 import { throwError } from "../../utils/helper";
 import * as path from "path";
 import ejs from "ejs";
-import { CreateUserResponse } from "../../utils/interface";
+import { UserDetailsResponse } from "../../utils/interface";
 import sendMail from "../../utils/mail";
 import { prisma } from "../../../lib/prisma";
 
 class MailService {
   async sendCreateUserMail(
-    user: CreateUserResponse,
+    user: UserDetailsResponse,
     link: string,
     db: any = prisma,
   ) {

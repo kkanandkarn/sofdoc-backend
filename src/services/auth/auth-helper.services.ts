@@ -1,6 +1,6 @@
 import { prisma } from "../../../lib/prisma";
 import { generateUniqueId, throwError } from "../../utils/helper";
-import { CreateUserResponse } from "../../utils/interface";
+import { UserDetailsResponse } from "../../utils/interface";
 import { FRONTEND_ROUTES } from "../../utils/constant";
 
 class AuthHelper {

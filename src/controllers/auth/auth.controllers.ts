@@ -35,3 +35,32 @@ export const register = async (
     next(e);
   }
 };
+
+export const getLinkDetails = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+) => {
+  try {
+    const data = await prisma.$transaction(async (tx) => {
+      return new AuthService().getLinkDetails(req.body, tx);
+    });
+    return data;
+  } catch (e) {
+    next(e);
+  }
+};
+export const resendRegistrationRequest = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+) => {
+  try {
+    const data = await prisma.$transaction(async (tx) => {
+      return new AuthService().resendRegistrationRequest(req.body, tx);
+    });
+    return data;
+  } catch (e) {
+    next(e);
+  }
+};

@@ -1,9 +1,11 @@
 import {
   CreateUserRequest,
-  CreateUserResponse,
+  UserDetailsResponse,
   GlobalPermissionResposne,
   LinkDetailsRequest,
+  LinkDetailsResponse,
   UpdateUserRequest,
+  User,
 } from "../../utils/interface";
 import { throwError } from "../../utils/helper";
 import { prisma } from "../../../lib/prisma";
@@ -12,7 +14,7 @@ class AuthRepository {
   async createUser(
     body: CreateUserRequest,
     db: any = prisma,
-  ): Promise<CreateUserResponse> {
+  ): Promise<UserDetailsResponse> {
     try {
       const user = await db.users.create({
         data: body,
@@ -25,7 +27,7 @@ class AuthRepository {
   async updateUser(
     body: UpdateUserRequest,
     db: any = prisma,
-  ): Promise<CreateUserResponse> {
+  ): Promise<UserDetailsResponse> {
     try {
       const user = await db.users.update({
         where: {
@@ -85,6 +87,40 @@ class AuthRepository {
         data: linkDetails,
       });
       return true;
+    } catch (e) {
+      throwError(e);
+    }
+  }
+  async getLinkDetails(
+    linkId: string,
+    db: any = prisma,
+  ): Promise<LinkDetailsResponse> {
+    try {
+      const linkDetails: LinkDetailsResponse = await db.linkDetails.findUnique({
+        where: {
+          linkId: linkId,
+          NOT: {
+            status: "DELETED",
+          },
+        },
+      });
+      return linkDetails;
+    } catch (e) {
+      throwError(e);
+    }
+  }
+  async getUserByEmail(
+    email: string,
+    db: any = prisma,
+  ): Promise<UserDetailsResponse> {
+    try {
+      const user = await db.users.findUnique({
+        where: {
+          email: email,
+        },
+      });
+      delete user.password;
+      return user;
     } catch (e) {
       throwError(e);
     }
