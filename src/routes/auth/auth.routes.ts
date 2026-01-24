@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  activateAccount,
   getLinkDetails,
   login,
   register,
@@ -19,6 +20,9 @@ router.post("/link-details", (req, res, next) => {
 });
 router.post("/resend-registration-request", (req, res, next) => {
   dispatcher({ req, res, next, func: resendRegistrationRequest });
+});
+router.post("/activate-account", (req, res, next) => {
+  dispatcher({ req, res, next, func: activateAccount });
 });
 
 export default router;

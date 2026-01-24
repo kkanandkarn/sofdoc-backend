@@ -54,6 +54,21 @@ const authSchema = {
       "any.required": "Email is required",
     }),
   }),
+  auth_activate_account_post: Joi.object({
+    linkId: Joi.string().guid({ version: "uuidv4" }).required().messages({
+      "string.base": "Link ID should be a type of text",
+      "string.guid": "Invalid link",
+      "any.required": "Link ID is required",
+      "string.empty": "Link ID is required",
+    }),
+    password: Joi.string().trim().min(6).max(30).required().messages({
+      "string.base": "Password should be a type of text",
+      "string.min": "Password must be at least 6 characters long",
+      "string.max": "Password must not exceed 30 characters",
+      "any.required": "Password is required",
+      "string.empty": "Password is required",
+    }),
+  }),
 };
 
 export default authSchema;

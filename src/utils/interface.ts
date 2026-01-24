@@ -127,19 +127,20 @@ export interface CreateUserRequest {
   tenantId?: string;
 }
 export interface UpdateUserRequest {
-  id: string;
+  id?: string;
   name?: string;
   email?: string;
   username?: string;
   picture?: string;
   password?: string;
+  status?: Status;
   userType?: "INDIVIDUAL" | "ORGANISATION";
   roleId?: string;
   tenantId?: string;
 }
 
 export interface UserDetailsResponse {
-  id: string;
+  id: number;
   name: string;
   email: string;
   username: string;

@@ -1,5 +1,5 @@
 import { generateUniqueId, throwError } from "../../utils/helper";
-import { STATUS, SUCCESS } from "../../utils/constant";
+import { LINK_PROGRAM_CODES, STATUS, SUCCESS } from "../../utils/constant";
 import { prisma } from "../../../lib/prisma";
 import { compare, hashPassword } from "../../utils/hash";
 import {
@@ -19,6 +19,7 @@ import {
   LinkDetailsRequest,
   LinkDetailsResponse,
   ResendRegistrationRequest,
+  ActivateUserAccountRequest,
 } from "../../utils/interface";
 import { AuthRepository } from "../../repository";
 import AuthHelperServices from "./auth-helper.services";
@@ -98,7 +99,7 @@ class AuthService {
   }
   async register(body, files, tx): Promise<ApiResponse> {
     try {
-      const { email, username } = body;
+      const { email, username, packageId = 1 } = body;
 
       const helper = new AuthHelper();
       const repository = new AuthRepository();
@@ -119,14 +120,12 @@ class AuthService {
 
       body = {
         ...body,
+        packageId: packageId,
         status: "INACTIVE",
         userType: "INDIVIDUAL",
       };
 
       let newUser: UserDetailsResponse = await repository.createUser(body, tx);
-
-      const { permissions } = await repository.getGlobalPermissions(tx);
-      await repository.addUserPermissions(newUser.id, permissions, tx);
 
       const linkId: string = await generateUniqueId();
 
@@ -135,7 +134,7 @@ class AuthService {
       const linkDetails = {
         linkId: linkId,
         programCode: "REGISTRATION_REQUEST",
-        linkData: newUser,
+        linkData: { userId: newUser.id },
         expiredAt: new Date(Date.now() + 10 * 60 * 1000),
       };
 
@@ -155,8 +154,8 @@ class AuthService {
         );
 
         await new AuthRepository().updateUser(
+          newUser.id,
           {
-            id: newUser.id,
             picture: url,
           },
           tx,
@@ -249,7 +248,7 @@ class AuthService {
       const linkDetails = {
         linkId: linkId,
         programCode: "REGISTRATION_REQUEST",
-        linkData: user,
+        linkData: { userId: user.id },
         expiredAt: new Date(Date.now() + 10 * 60 * 1000),
       };
 
@@ -263,6 +262,55 @@ class AuthService {
     } catch (e) {
       throwError(e);
     }
+  }
+  async activateAccount(
+    body: ActivateUserAccountRequest,
+    tx: any,
+  ): Promise<ApiResponse> {
+    const { linkId, password } = body;
+    const repository = new AuthRepository();
+    const linkDetails = await repository.getLinkDetails(linkId, tx);
+    if (!linkDetails) {
+      throw new ErrorHandler(NOT_FOUND, "Invalid link.");
+    }
+    if (linkDetails.programCode !== LINK_PROGRAM_CODES.REGISTRATION_REQUEST) {
+      throw new ErrorHandler(NOT_FOUND, "Invalid link.");
+    }
+    if (linkDetails.status === STATUS.EXPIRED) {
+      throw new ErrorHandler(
+        BAD_REQUEST,
+        "Link is expired. Please request a new link",
+      );
+    }
+
+    const now = new Date();
+    const expiredAt = new Date(linkDetails.expiredAt);
+
+    if (expiredAt <= now) {
+      throw new ErrorHandler(
+        BAD_REQUEST,
+        "Link is expired. Please request a new link.",
+      );
+    }
+    const userId = linkDetails.linkData.userId;
+    const user = await repository.getUserDetails(userId, tx);
+    if (user.status !== STATUS.INACTIVE) {
+      throw new ErrorHandler(
+        BAD_REQUEST,
+        "Reqistration request already fulfilled",
+      );
+    }
+
+    await repository.updateLinkDetails(linkId, { status: STATUS.EXPIRED }, tx);
+    const hashedPassword: string = await hashPassword(password);
+    await repository.updateUser(userId, {
+      password: hashedPassword,
+      status: "ACTIVE",
+    });
+
+    return {
+      message: SUCCESS,
+    };
   }
 }
 export default AuthService;

@@ -1,9 +1,10 @@
 import * as bcryptjs from "bcryptjs";
+import { throwError } from "./helper";
 
-export const hashPassword = async (password: string) => {
+export const hashPassword = async (password: string): Promise<string> => {
   try {
     const saltRounds = 10;
-    const hashedPassword = await new Promise((resolve, reject) => {
+    const hashedPassword: string = await new Promise((resolve, reject) => {
       bcryptjs.hash(password, saltRounds, function (err, hash) {
         if (err) {
           return reject(err instanceof Error ? err : new Error(err));
@@ -11,10 +12,9 @@ export const hashPassword = async (password: string) => {
         resolve(hash);
       });
     });
-    return hashedPassword;
+    return hashedPassword as string;
   } catch (error) {
-    console.log(error);
-    return 0;
+    throwError(error);
   }
 };
 export const compare = async (original: string, password: string) => {

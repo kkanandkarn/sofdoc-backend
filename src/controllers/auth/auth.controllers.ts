@@ -13,7 +13,6 @@ export const login = async (
     const data = await prisma.$transaction(async (tx) => {
       return new AuthService().login(req.body, tx);
     });
-    // const data = await new Auth().login(req.body);
     return data;
   } catch (e) {
     next(e);
@@ -58,6 +57,20 @@ export const resendRegistrationRequest = async (
   try {
     const data = await prisma.$transaction(async (tx) => {
       return new AuthService().resendRegistrationRequest(req.body, tx);
+    });
+    return data;
+  } catch (e) {
+    next(e);
+  }
+};
+export const activateAccount = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+) => {
+  try {
+    const data = await prisma.$transaction(async (tx) => {
+      return new AuthService().activateAccount(req.body, tx);
     });
     return data;
   } catch (e) {

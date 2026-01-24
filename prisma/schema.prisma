@@ -29,158 +29,121 @@ enum RoleType {
 }
 
 model GlobalPermissionMaster {
-  id             String   @id @default(uuid())
+  id             Int      @id @default(autoincrement())
   permissionName String
   parent         String
-  packageId      String?
   status         Status   @default(ACTIVE)
   createdBy      String   @default("System")
   updatedBy      String   @default("System")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  package                 Packages?                 @relation(fields: [packageId], references: [id])
-  globalTenantPermissions GlobalTenantPermissions[]
-  globalUserPermissions   GlobalUserPermissions[]
+  PackagePermissions PackagePermissions[]
 
-  @@unique([permissionName, parent, packageId])
+  @@unique([permissionName, parent])
   @@map("global_permission_master")
 }
 
-model GlobalTenantPermissions {
-  id            String   @id @default(uuid())
-  tenantId      String
-  permissionsId String
-  packageId     String?
-  status        Status   @default(ACTIVE)
-  createdBy     String   @default("System")
-  updatedBy     String   @default("System")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  tenant     Tenants                @relation(fields: [tenantId], references: [id])
-  permission GlobalPermissionMaster @relation(fields: [permissionsId], references: [id])
-
-  globalRolePermissions GlobalRolePermissions[]
-
-  @@map("global_tenant_permissions")
-}
-
 model Packages {
-  id          String   @id @default(uuid())
+  id          Int      @id @default(autoincrement())
   name        String
   price       String
   packageData Json
   limits      Json?
+  isMaster    Boolean  @default(false)
   status      Status   @default(ACTIVE)
   createdBy   String   @default("System")
   updatedBy   String   @default("System")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  tenant                 Tenants[]
-  globalPermissionMaster GlobalPermissionMaster[]
+  tenant             Tenants[]
+  packagePermissions PackagePermissions[]
+  Users              Users[]
 
   @@map("packages")
 }
 
+model PackagePermissions {
+  id            Int      @id @default(autoincrement())
+  packageId     Int
+  permissionsId Int
+  status        Status   @default(ACTIVE)
+  createdBy     String   @default("System")
+  updatedBy     String   @default("System")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  package                 Packages               @relation(fields: [packageId], references: [id])
+  globalPermissionsMaster GlobalPermissionMaster @relation(fields: [permissionsId], references: [id])
+
+  @@map("package_permissions")
+}
+
 model Tenants {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   name      String
   logo      String?
-  packageId String
+  packageId Int
   status    Status   @default(ACTIVE)
   createdBy String   @default("System")
   updatedBy String   @default("System")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  package                 Packages                  @relation(fields: [packageId], references: [id])
-  role                    Roles[]
-  users                   Users[]
-  globalTenantPermissions GlobalTenantPermissions[]
-  urlMapper               UrlMapper[]
+  package   Packages    @relation(fields: [packageId], references: [id])
+  role      Roles[]
+  users     Users[]
+  urlMapper UrlMapper[]
 
   @@map("tenants")
 }
 
 model Roles {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   roleName  String
   roleType  RoleType
-  tenantId  String
+  tenantId  Int
   status    Status   @default(ACTIVE)
   createdBy String   @default("System")
   updatedBy String   @default("System")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant                Tenants                 @relation(fields: [tenantId], references: [id])
-  user                  Users[]
-  globalRolePermissions GlobalRolePermissions[]
-  urlMapper             UrlMapper[]
+  tenant    Tenants     @relation(fields: [tenantId], references: [id])
+  user      Users[]
+  urlMapper UrlMapper[]
 
   @@map("roles")
 }
 
 model Users {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   name      String
   email     String   @unique
   username  String?  @unique
   picture   String?
   password  String?
   userType  UserType @default(INDIVIDUAL)
-  roleId    String?
-  tenantId  String?
+  roleId    Int?
+  tenantId  Int?
+  packageId Int?
   status    Status   @default(ACTIVE)
   createdBy String   @default("System")
   updatedBy String   @default("System")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  role                  Roles?                  @relation(fields: [roleId], references: [id])
-  tenant                Tenants?                @relation(fields: [tenantId], references: [id])
-  globalUserPermissions GlobalUserPermissions[]
-  urlMapper             UrlMapper[]
+  role      Roles?      @relation(fields: [roleId], references: [id])
+  tenant    Tenants?    @relation(fields: [tenantId], references: [id])
+  packages  Packages?   @relation(fields: [packageId], references: [id])
+  urlMapper UrlMapper[]
 
   @@map("users")
 }
 
-model GlobalRolePermissions {
-  id           String   @id @default(uuid())
-  roleId       String
-  permissionId String
-  status       Status   @default(ACTIVE)
-  createdBy    String   @default("System")
-  updatedBy    String   @default("System")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  role                   Roles                   @relation(fields: [roleId], references: [id])
-  globalTenantPermission GlobalTenantPermissions @relation(fields: [permissionId], references: [id])
-
-  @@map("global_role_permissions")
-}
-
-model GlobalUserPermissions {
-  id           String   @id @default(uuid())
-  userId       String
-  permissionId String
-  status       Status   @default(ACTIVE)
-  createdBy    String   @default("System")
-  updatedBy    String   @default("System")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  globalPermissionMaster GlobalPermissionMaster @relation(fields: [permissionId], references: [id])
-  users                  Users                  @relation(fields: [userId], references: [id])
-
-  @@map("global_user_permissions")
-}
-
 model Otp {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   email     String
   otp       String
   otpReason String
@@ -197,7 +160,7 @@ model Otp {
 }
 
 model OtpCount {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   email     String
   otp       String
   otpReason String
@@ -212,7 +175,7 @@ model OtpCount {
 }
 
 model UrlMapper {
-  id               String   @id @default(uuid())
+  id               Int      @id @default(autoincrement())
   fileId           String   @unique
   originalUrl      String
   mapUrl           String
@@ -222,12 +185,12 @@ model UrlMapper {
   originalFileName String
   originalFileSize String
   mimeType         String
-  userId           String?
-  roleId           String?
-  tenantId         String?
+  userId           Int?
+  roleId           Int?
+  tenantId         Int?
   status           Status   @default(ACTIVE)
-  createdBy        String?
-  updatedBy        String?
+  createdBy        Int?
+  updatedBy        Int?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -239,7 +202,7 @@ model UrlMapper {
 }
 
 model LinkDetails {
-  id          String   @id @default(uuid())
+  id          Int      @id @default(autoincrement())
   linkId      String   @unique
   programCode String
   linkData    Json
@@ -254,7 +217,7 @@ model LinkDetails {
 }
 
 model WhitelistEmail {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   email     String   @unique
   status    Status   @default(ACTIVE)
   createdBy String   @default("System")
